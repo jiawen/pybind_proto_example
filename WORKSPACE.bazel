@@ -1,0 +1,62 @@
+load(
+    "//:workspace_deps.bzl",
+    "declare_com_google_protobuf",
+    "declare_pybind_stack",
+    "declare_rules_proto",
+    "declare_rules_python",
+)
+
+##### Python #####
+
+declare_rules_python()
+
+load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
+
+py_repositories()
+
+PYTHON_TOOLCHAIN_REPO_NAME = "python310"
+
+PYTHON_BASE_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20240107"
+
+PYTHON_VERSION = "3.10.13"
+
+# "tool_versions" dict passed to python_register_toolchains().
+PYTHON_TOOL_VERSIONS = {
+    "3.10.13": {
+        "url": "cpython-{python_version}+20240107-{platform}-pgo+lto-full.tar.zst",
+        "sha256": {
+            "aarch64-apple-darwin": "d1a777a0688bafd2a62050c680508769d9b6c14779f64fee591f4e135c11e711",
+            "x86_64-unknown-linux-gnu": "60e7ca89d37dd8a630a5525bda6143a66a3949c4f03c8319295ddb1d1023b425",
+        },
+        "strip_prefix": "python",
+    },
+}
+
+python_register_toolchains(
+    name = PYTHON_TOOLCHAIN_REPO_NAME,
+    base_url = PYTHON_BASE_URL,
+    python_version = PYTHON_VERSION,
+    tool_versions = PYTHON_TOOL_VERSIONS,
+)
+
+##### Protocol Buffers #####
+
+# *Do* call declare_com_google_protobuf(), so we can patch it. Otherwise,
+# rules_proto.rules_proto_dependencies() will pull it in anyway.
+#
+# But *do not* call com_google_protobuf.protobuf_deps(), which will pull in a
+# bad version of internal deps.
+#
+# TODO(jiawen): Look into this as protobuf and rules_proto get updated.
+declare_com_google_protobuf()
+
+declare_rules_proto()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
+
+# Pybind11 stack.
+declare_pybind_stack()

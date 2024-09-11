@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package example;
+
+message Line {
+  float scale = 1;
+  float offset = 2;
+}

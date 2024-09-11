@@ -1,0 +1,50 @@
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("@rules_python//python:defs.bzl", "py_library")
+load("@rules_python//python:proto.bzl", "py_proto_library")
+
+proto_library(
+    name = "line_proto",
+    srcs = ["line.proto"],
+)
+
+cc_proto_library(
+    name = "line_cc_proto",
+    deps = [":line_proto"],
+)
+
+py_proto_library(
+    name = "line_py_proto",
+    deps = [":line_proto"],
+)
+
+cc_library(
+    name = "line_utils",
+    srcs = ["line_utils.cpp"],
+    hdrs = ["line_utils.h"],
+    deps = [":line_cc_proto"],
+)
+
+# Outputs line_pybind.so, not pybind. So build as ":line_pybind".
+pybind_extension(
+    name = "line_pybind",
+    srcs = ["line_pybind.cpp"],
+    deps = [
+        ":line_utils",
+        "@pybind11_protobuf//pybind11_protobuf:native_proto_caster",
+    ],
+)
+
+# Wrap a py_library around the pybind_extension.
+py_library(
+    name = "py_line_utils",
+    srcs = ["py_line_utils.py"],
+    data = [":line_pybind.so"],
+    deps = [":line_py_proto"],  # Necessary or it can't find the module "line_pb2".
+)
+
+# Test the wrapper.
+py_test(
+    name = "line_utils_py_test",
+    srcs = ["line_utils_py_test.py"],
+    deps = [":py_line_utils"],
+)

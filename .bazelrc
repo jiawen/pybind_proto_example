@@ -1,0 +1,39 @@
+# Disable bzlmod - rules_python is not yet compatible.
+#
+# In particular, without this, building the pybind_extension
+# will complain that it can't resolve a toolchain in
+# @@rules_python//python/cc:current_py_cc_libs.
+common --noenable_bzlmod
+
+# Disable automatic creation of empty __init__.py files.
+# https://github.com/bazelbuild/bazel/issues/7386#issuecomment-1806973756
+common --incompatible_default_to_explicit_init_py
+
+# Automatically picks up host-specific configs:
+# Linux -> build:linux
+# MacOS -> build:macos
+# Windows -> build:windows
+# https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
+common --enable_platform_specific_config
+
+# Common build flags for pybind_abseil.
+build --cxxopt="-D PYBIND11_ABSEIL_STATUS_MODULE_PATH=pybind11_abseil.pybind11_abseil.status" --host_cxxopt="-D PYBIND11_ABSEIL_STATUS_MODULE_PATH=pybind11_abseil.pybind11_abseil.status"
+
+# Use C++20 on MacOS and Linux. It should be well supported by now.
+# C++17 should work.
+# Windows is not tested.
+
+# MacOS.
+build:macos --cxxopt=-std=c++20 --host_cxxopt=-std=c++20
+
+# Linux.
+build:linux --cxxopt=-std=c++20 --host_cxxopt=-std=c++20
+# Enable position independent code (this is the default on macOS and Windows)
+# (Workaround for https://github.com/bazelbuild/rules_foreign_cc/issues/421)
+build:linux --copt=-fdebug-types-section
+build:linux --copt=-fPIC
+build:linux --copt=-Wno-deprecated-declarations
+build:linux --cxxopt=-fsized-deallocation --host_cxxopt=-fsized-deallocation
+build:linux --conlyopt=-fexceptions
+build:linux --fission=dbg,opt
+build:linux --features=per_object_debug_info
